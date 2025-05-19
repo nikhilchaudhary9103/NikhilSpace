@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload Post | NikhilSpace</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      color: #f0f9ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 40px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      color: #60a5fa;
+      margin-bottom: 20px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 1em;
+    }
+
+    textarea {
+      resize: none;
+      height: 100px;
+    }
+
+    button {
+      padding: 12px 25px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1em;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(99, 102, 241, 0.4);
+      transition: all 0.2s ease-in-out;
+    }
+
+    button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(99, 102, 241, 0.6);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Upload a Post</h1>
+    <form id="uploadForm">
+      <input type="file" id="fileInput" accept="image/*,.pdf,.zip,.doc,.docx" required />
+      <textarea id="caption" placeholder="Write a caption..." required></textarea>
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDaTurSbn-e8roa7o9DeAzEDAb_ZETBu3I",
+      authDomain: "comment-app-eae1d.firebaseapp.com",
+      databaseURL: "https://comment-app-eae1d-default-rtdb.firebaseio.com",
+      projectId: "comment-app-eae1d",
+      storageBucket: "comment-app-eae1d.appspot.com",
+      messagingSenderId: "1085942013485",
+      appId: "1:1085942013485:web:8b73425849e72db191e2a4",
+      measurementId: "G-WF0852Z57K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+    const postsRef = ref(db, "posts");
+
+    const form = document.getElementById("uploadForm");
+    const fileInput = document.getElementById("fileInput");
+    const captionInput = document.getElementById("caption");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const file = fileInput.files[0];
+      const caption = captionInput.value.trim();
+
+      if (!file || !caption) {
+        alert("Please provide both file and caption.");
+        return;
+      }
+
+      const storageRef = sRef(storage, `posts/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const fileURL = await getDownloadURL(storageRef);
+
+      push(postsRef, {
+        fileURL,
+        caption,
+        timestamp: new Date().toISOString()
+      });
+
+      alert("Post uploaded successfully!");
+      form.reset();
+    });
+  </script>
+</body>
+
+</html>
