@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload | NikhilSpace</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      background: linear-gradient(180deg, #0f172a, #1e293b);
+      color: #f0f9ff;
+      font-family: 'Rajdhani', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+      width: 90%;
+      max-width: 450px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      color: #60a5fa;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1em;
+      background-color: #1e293b;
+      color: #f0f9ff;
+    }
+
+    button {
+      padding: 12px 25px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+    }
+
+    .progress {
+      margin-top: 10px;
+      height: 20px;
+      width: 100%;
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: #4ade80;
+      transition: width 0.3s;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #facc15;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Upload a File</h1>
+    <input type="file" id="fileInput" />
+    <textarea id="caption" placeholder="Write a caption..."></textarea>
+    <button onclick="uploadPost()">Upload</button>
+
+    <div class="progress" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDaTurSbn-e8roa7o9DeAzEDAb_ZETBu3I",
+      authDomain: "comment-app-eae1d.firebaseapp.com",
+      databaseURL: "https://comment-app-eae1d-default-rtdb.firebaseio.com",
+      projectId: "comment-app-eae1d",
+      storageBucket: "comment-app-eae1d.appspot.com",
+      messagingSenderId: "1085942013485",
+      appId: "1:1085942013485:web:8b73425849e72db191e2a4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const storage = firebase.storage();
+
+    function uploadPost() {
+      const file = document.getElementById("fileInput").files[0];
+      const caption = document.getElementById("caption").value.trim();
+      const progressBar = document.getElementById("progressBar");
+      const progressContainer = document.getElementById("progressContainer");
+      const status = document.getElementById("status");
+
+      if (!file || !caption) {
+        alert("Please select a file and enter a caption.");
+        return;
+      }
+
+      const fileName = Date.now() + "_" + file.name;
+      const storageRef = storage.ref("posts/" + fileName);
+      const uploadTask = storageRef.put(file);
+
+      progressContainer.style.display = "block";
+      status.textContent = "Uploading...";
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          progressBar.style.width = percent + "%";
+        },
+        (error) => {
+          status.textContent = "Upload failed: " + error.message;
+          status.style.color = "#f87171";
+        },
+        () => {
+          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+            const postData = {
+              fileURL: downloadURL,
+              caption: caption,
+              timestamp: new Date().toISOString()
+            };
+            db.ref("posts").push(postData);
+            status.textContent = "Upload successful!";
+            status.style.color = "#4ade80";
+            progressBar.style.width = "0";
+            document.getElementById("fileInput").value = "";
+            document.getElementById("caption").value = "";
+          });
+        }
+      );
+    }
+  </script>
+</body>
+</html>
